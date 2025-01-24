@@ -15,6 +15,7 @@
     using Vortice.Direct3D11;
     using Vortice.DXGI;
     using Vortice.Mathematics;
+    using static ClickableTransparentOverlay.Win32.Dwmapi;
     using Point = System.Drawing.Point;
     using Size = System.Drawing.Size;
 
@@ -48,6 +49,7 @@
         private string fontPathName;
         private float fontSize;
         private FontGlyphRangeType fontLanguage;
+        private bool compatibilityMode;
 
         private Dictionary<string, (IntPtr Handle, uint Width, uint Height)> loadedTexturesPtrs;
 
@@ -203,6 +205,18 @@
         /// Enable or disable the vsync on the overlay.
         /// </summary>
         public bool VSync;
+        public bool CompatibilityMode 
+        { 
+            get => compatibilityMode;
+            set
+            {
+                if (compatibilityMode != value)
+                {
+                    compatibilityMode = value;
+                    SetCompatibilityMode(value);
+                }
+            }
+        }
 
         /// <summary>
         /// Gets or sets the position of the overlay window.
@@ -335,7 +349,7 @@
             if (disposing)
             {
                 this.renderThread?.Join();
-                foreach(var key in this.loadedTexturesPtrs.Keys.ToArray())
+                foreach (var key in this.loadedTexturesPtrs.Keys.ToArray())
                 {
                     this.RemoveImage(key);
                 }
@@ -387,7 +401,16 @@
                 deltaTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
                 stopwatch.Restart();
                 this.window.PumpEvents();
-                Utils.SetOverlayClickable(this.window.Handle, this.inputhandler.Update());
+
+                if (!CompatibilityMode)
+                {
+                    Utils.SetOverlayClickable(this.window.Handle, this.inputhandler.Update());
+                }
+                else
+                {
+                    this.inputhandler.Update();
+                }
+
                 this.renderer.Update(deltaTime, () => { Render(); });
                 this.deviceContext.OMSetRenderTargets(renderView);
                 this.deviceContext.ClearRenderTargetView(renderView, clearColor);
@@ -450,6 +473,38 @@
             this.renderer.Resize(this.window.Dimensions.Width, this.window.Dimensions.Height);
         }
 
+        private void SetCompatibilityMode(bool enabled)
+        {
+            if (enabled)
+            {
+                var style = (WindowStyles)User32.GetWindowLong(this.window.Handle, (int)WindowLongParam.GWL_STYLE);
+                var exStyle = (WindowExStyles)User32.GetWindowLong(this.window.Handle, (int)WindowLongParam.GWL_EXSTYLE);
+
+                style &= ~WindowStyles.WS_POPUP;
+
+                style |= WindowStyles.WS_OVERLAPPED | WindowStyles.WS_CAPTION | WindowStyles.WS_THICKFRAME;
+
+                style |= WindowStyles.WS_SYSMENU | WindowStyles.WS_MINIMIZEBOX | WindowStyles.WS_MAXIMIZEBOX;
+
+                User32.SetWindowLong(this.window.Handle, (int)WindowLongParam.GWL_STYLE, (uint)style);
+                User32.SetWindowLong(this.window.Handle, (int)WindowLongParam.GWL_EXSTYLE, (uint)exStyle);
+
+                var margins = new Margins(0, 0, 0, 0);
+                DwmExtendFrameIntoClientArea(this.window.Handle, ref margins);
+
+                User32.ShowWindow(this.window.Handle, ShowWindowCommand.Restore);
+            }
+            else
+            {
+                var style = WindowStyles.WS_POPUP;
+                User32.SetWindowLong(this.window.Handle, (int)WindowLongParam.GWL_STYLE, (uint)style);
+
+                User32.ShowWindow(this.window.Handle, ShowWindowCommand.ShowMaximized);
+                Utils.InitTransparency(this.window.Handle);
+            }
+        }
+
+
         private async Task InitializeResources()
         {
             D3D11.D3D11CreateDevice(
@@ -490,8 +545,17 @@
             this.inputhandler = new ImGuiInputHandler(this.window.Handle);
             this.overlayIsReady = true;
             await this.PostInitialized();
+
             User32.ShowWindow(this.window.Handle, ShowWindowCommand.ShowMaximized);
-            Utils.InitTransparency(this.window.Handle);
+
+            if (!CompatibilityMode)
+            {
+                Utils.InitTransparency(this.window.Handle);
+            }
+            else
+            {
+                User32.ShowWindow(this.window.Handle, ShowWindowCommand.Restore);
+            }
         }
 
         private bool ProcessMessage(WindowMessage msg, UIntPtr wParam, IntPtr lParam)
