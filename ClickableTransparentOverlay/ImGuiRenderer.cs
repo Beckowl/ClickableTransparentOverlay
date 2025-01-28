@@ -1,19 +1,19 @@
 ﻿namespace ClickableTransparentOverlay
 {
-    using ImGuiNET;
-    using ImDrawIdx = System.UInt16;
-    using Vortice.DXGI;
-    using Vortice.Direct3D;
-    using Vortice.Direct3D11;
-    using Vortice.D3DCompiler;
-    using Vortice.Mathematics;
-    using System.Numerics;
-    using System.Collections.Generic;
     using System;
+    using System.Buffers;
+    using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
+    using ImGuiNET;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
-    using System.Buffers;
+    using Vortice.D3DCompiler;
+    using Vortice.Direct3D;
+    using Vortice.Direct3D11;
+    using Vortice.DXGI;
+    using Vortice.Mathematics;
+    using ImDrawIdx = System.UInt16;
 
     unsafe internal sealed class ImGuiRenderer : IDisposable
     {

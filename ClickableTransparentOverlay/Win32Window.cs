@@ -1,8 +1,8 @@
 ﻿namespace ClickableTransparentOverlay
 {
-    using ClickableTransparentOverlay.Win32;
     using System;
     using System.Drawing;
+    using ClickableTransparentOverlay.Win32;
 
     internal sealed class Win32Window : IDisposable
     {

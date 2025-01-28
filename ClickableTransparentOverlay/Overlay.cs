@@ -1,8 +1,5 @@
 ﻿namespace ClickableTransparentOverlay
 {
-    using ClickableTransparentOverlay.Win32;
-    using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -11,6 +8,9 @@
     using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
+    using ClickableTransparentOverlay.Win32;
+    using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
     using Vortice.Direct3D;
     using Vortice.Direct3D11;
     using Vortice.DXGI;
@@ -205,8 +205,8 @@
         /// Enable or disable the vsync on the overlay.
         /// </summary>
         public bool VSync;
-        public bool CompatibilityMode 
-        { 
+        public bool CompatibilityMode
+        {
             get => compatibilityMode;
             set
             {
